@@ -49,7 +49,6 @@ cp .env.example .env
 |----------|----------|-------------|
 | `EXPO_PUBLIC_API_BASE` | Yes | Backend API base URL (e.g. `https://voice-assist.example.com`) |
 | `EXPO_PUBLIC_LIVEKIT_URL` | Yes | LiveKit WebSocket URL (e.g. `wss://your-project.livekit.cloud`) |
-| `EXPO_PUBLIC_MAX_COMPLETION_TOKENS` | No | Sent to `/api/token` as `max_completion_tokens`. Omit to use backend default. Backend must apply this to the agent LLM. |
 
 Restart Metro after changing `.env` — `EXPO_PUBLIC_*` values are inlined at bundle time.
 
@@ -113,7 +112,7 @@ Protected routes use `Authorization: Bearer <token>`.
 | `POST /api/auth/signup` | Register |
 | `GET /api/auth/me` | Current user |
 | `GET /api/config` | Agent greeting & settings |
-| `GET /api/token` | LiveKit room token (`room`, optional `sessionId`, optional `max_completion_tokens`) |
+| `GET /api/token` | LiveKit room token (`room`, optional `sessionId`) |
 | `GET /api/sessions` | List cooking sessions |
 | `GET /api/sessions/:id` | Session with ingredients & steps |
 | `DELETE /api/sessions/:id` | Delete session |
@@ -122,7 +121,7 @@ Protected routes use `Authorization: Bearer <token>`.
 
 | Symptom | Likely cause |
 |---------|----------------|
-| Grace greets but never replies | Backend OpenRouter/LLM error (check agent Docker logs). Ensure `max_completion_tokens` is set on the **agent**, not only mobile. |
+| Grace greets but never replies | Backend OpenRouter/LLM error (check agent Docker logs). Set `max_tokens` on the **agent** (e.g. 4096). |
 | No microphone / can't connect | Using Expo Go instead of dev build, or mic permission denied |
 | Agent shows `trackPublications: []` | Mic track not published yet, or app disconnected before `setMicrophoneEnabled(true)` |
 | Multiple agent jobs / timeouts | Rapid connect/disconnect — leave Cook tab stable for a few seconds after opening |
