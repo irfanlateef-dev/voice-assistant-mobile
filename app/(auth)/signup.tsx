@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -71,44 +73,42 @@ export default function SignupScreen() {
   }
 
   return (
-    <ScreenWrapper scroll edges={['top', 'bottom', 'left', 'right']}>
+    <ScreenWrapper edges={['top', 'bottom', 'left', 'right']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
       >
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
-            <RadialGradient id="signupGrad" cx="50%" cy="15%" r="60%">
-              <Stop offset="0" stopColor="#fde68a" stopOpacity="0.5" />
+            <RadialGradient id="signupGrad" cx="50%" cy="8%" r="50%">
+              <Stop offset="0" stopColor="#fde68a" stopOpacity="0.45" />
               <Stop offset="1" stopColor={colors.background} stopOpacity="0" />
             </RadialGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#signupGrad)" />
         </Svg>
 
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Svg width={56} height={56}>
-              <Defs>
-                <LinearGradient id="logoGradSignup" x1="0" y1="0" x2="1" y2="1">
-                  <Stop offset="0" stopColor={colors.primary} />
-                  <Stop offset="1" stopColor={colors.accent} />
-                </LinearGradient>
-              </Defs>
-              <Rect width={56} height={56} rx={borderRadius.md} fill="url(#logoGradSignup)" />
-            </Svg>
-            <Text style={styles.logoEmoji}>🍲</Text>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Image
+              source={require('../../assets/icon.png')}
+              style={styles.logoImage}
+            />
+            <Text style={styles.appName}>HomeChef AI</Text>
           </View>
-          <Text style={styles.appName}>HomeChef AI</Text>
-        </View>
 
-        <Card style={styles.card}>
-          <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Start cooking hands-free with Grace</Text>
+          <Card style={styles.card}>
+            <Text style={styles.title}>Create account</Text>
+            <Text style={styles.subtitle}>Start cooking hands-free with Grace</Text>
 
-          {errors.form && <Text style={styles.formError}>{errors.form}</Text>}
+            {errors.form && <Text style={styles.formError}>{errors.form}</Text>}
 
-          {(['name', 'email', 'password', 'confirmPassword'] as const).map((field) => {
+            {(['name', 'email', 'password', 'confirmPassword'] as const).map((field) => {
             const labels = {
               name: 'Name',
               email: 'Email',
@@ -189,6 +189,7 @@ export default function SignupScreen() {
             </Pressable>
           </Link>
         </Card>
+        </ScrollView>
       </KeyboardAvoidingView>
     </ScreenWrapper>
   );
@@ -197,23 +198,26 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    padding: spacing.lg,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
     justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
   },
-  logoContainer: {
-    width: 56,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.lg,
     marginBottom: spacing.md,
-  },
-  logoEmoji: {
-    position: 'absolute',
-    fontSize: 28,
   },
   appName: {
     fontSize: fontSizes.xxl,
@@ -221,7 +225,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   card: {
-    marginBottom: spacing.lg,
+    marginBottom: 0,
   },
   title: {
     fontSize: fontSizes.xl,

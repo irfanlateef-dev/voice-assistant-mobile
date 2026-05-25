@@ -1,7 +1,7 @@
 import '@/lib/livekitPolyfills';
 import '../global.css';
 import { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -20,7 +20,7 @@ import * as secureStorage from '@/lib/secureStorage';
 import { setupLiveKit } from '@/lib/livekitSetup';
 import { useAuthStore } from '@/stores/authStore';
 import * as authService from '@/services/auth.service';
-import { colors } from '@/constants/colors';
+import { AnimatedSplash } from '@/components/layout/AnimatedSplash';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash screen may already be hidden
@@ -107,7 +107,7 @@ export default function RootLayout() {
   }, []);
 
   if (!fontsReady || !ready) {
-    return <View style={styles.splash} />;
+    return <AnimatedSplash />;
   }
 
   return (
@@ -127,9 +127,5 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-  },
-  splash: {
-    flex: 1,
-    backgroundColor: colors.background,
   },
 });

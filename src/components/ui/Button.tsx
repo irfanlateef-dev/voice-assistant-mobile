@@ -4,7 +4,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View,
   ViewStyle,
 } from 'react-native';
 import Animated, {
@@ -12,7 +11,6 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { colors } from '@/constants/colors';
 import { borderRadius, spacing } from '@/constants/spacing';
 import { fontSizes, fontWeights } from '@/constants/typography';
@@ -40,24 +38,6 @@ const sizeStyles: Record<
   lg: { paddingVertical: spacing.lg, paddingHorizontal: spacing.xxl, fontSize: fontSizes.md },
 };
 
-function GradientBackground({
-  colors: gradientColors,
-}: {
-  colors: readonly [string, string];
-}) {
-  return (
-    <Svg style={StyleSheet.absoluteFill}>
-      <Defs>
-        <LinearGradient id="btnGrad" x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0" stopColor={gradientColors[0]} />
-          <Stop offset="1" stopColor={gradientColors[1]} />
-        </LinearGradient>
-      </Defs>
-      <Rect width="100%" height="100%" fill="url(#btnGrad)" />
-    </Svg>
-  );
-}
-
 export function Button({
   title,
   onPress,
@@ -76,7 +56,6 @@ export function Button({
 
   const isDisabled = disabled || loading;
   const sizeStyle = sizeStyles[size];
-
   const variantStyles = getVariantStyles(variant);
 
   return (
@@ -106,12 +85,6 @@ export function Button({
           variantStyles.container,
         ]}
       >
-        {variant === 'primary' && (
-          <GradientBackground colors={[colors.primary, colors.accent]} />
-        )}
-        {variant === 'danger' && (
-          <GradientBackground colors={[colors.error, '#b91c1c']} />
-        )}
         {loading ? (
           <ActivityIndicator
             color={variantStyles.spinnerColor}
@@ -148,7 +121,7 @@ function getVariantStyles(variant: ButtonVariant) {
       };
     case 'danger':
       return {
-        container: styles.primaryContainer,
+        container: styles.dangerContainer,
         textColor: colors.surface,
         spinnerColor: colors.surface,
       };
@@ -167,7 +140,6 @@ const styles = StyleSheet.create({
   },
   base: {
     borderRadius: borderRadius.md,
-    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,
@@ -180,11 +152,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderStrong,
   },
+  dangerContainer: {
+    backgroundColor: colors.error,
+  },
   ghostContainer: {
     backgroundColor: 'transparent',
   },
   text: {
     fontWeight: fontWeights.semibold,
-    zIndex: 1,
   },
 });

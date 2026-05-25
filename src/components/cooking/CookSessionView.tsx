@@ -116,64 +116,75 @@ export function CookSessionView({
         })}
       </View>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {activeTab === 'grace' && (
-          <View style={styles.graceTab}>
-            {isExpoGo() && <ExpoGoVoiceBanner />}
-            <GraceOrb status={voice.status} />
-            <TranscriptFeed entries={voice.transcript} />
-            {voice.connectError && (
-              <Text style={styles.connectError}>{voice.connectError}</Text>
-            )}
+      {activeTab === 'grace' ? (
+        <View style={styles.graceTab}>
+          <View style={styles.orbBackground} pointerEvents="none">
+            <View style={styles.orbScale}>
+              <GraceOrb status={voice.status} />
+            </View>
           </View>
-        )}
 
-        {activeTab === 'ingredients' &&
-          (ingredients.length > 0 ? (
-            <IngredientChecklist ingredients={ingredients} />
-          ) : (
-            <CookEmptyPanel
-              emoji="🥕"
-              title="No ingredients yet"
-              subtitle={
-                isNewSession
-                  ? 'Chat with Grace — she will add ingredients once you choose a dish.'
-                  : 'Ingredients will appear here as Grace plans your recipe.'
-              }
-            />
-          ))}
+          {isExpoGo() && (
+            <View style={styles.bannerWrap}>
+              <ExpoGoVoiceBanner />
+            </View>
+          )}
 
-        {activeTab === 'steps' &&
-          (steps.length > 0 ? (
-            <StepTracker steps={steps} />
-          ) : (
-            <CookEmptyPanel
-              emoji="👩‍🍳"
-              title="No steps yet"
-              subtitle={
-                isNewSession
-                  ? 'Steps will show up after Grace confirms what you are cooking.'
-                  : 'Cooking steps will appear here once your recipe is ready.'
-              }
-            />
-          ))}
+          <TranscriptFeed entries={voice.transcript} />
 
-        {activeTab === 'notes' &&
-          (notes.length > 0 ? (
-            <NotesPanel notes={notes} />
-          ) : (
-            <CookEmptyPanel
-              emoji="📝"
-              title="No notes yet"
-              subtitle="Tips, substitutions, and fun facts from Grace will appear here."
-            />
-          ))}
-      </ScrollView>
+          {voice.connectError && (
+            <Text style={styles.connectError}>{voice.connectError}</Text>
+          )}
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {activeTab === 'ingredients' &&
+            (ingredients.length > 0 ? (
+              <IngredientChecklist ingredients={ingredients} />
+            ) : (
+              <CookEmptyPanel
+                emoji="🥕"
+                title="No ingredients yet"
+                subtitle={
+                  isNewSession
+                    ? 'Chat with Grace — she will add ingredients once you choose a dish.'
+                    : 'Ingredients will appear here as Grace plans your recipe.'
+                }
+              />
+            ))}
+
+          {activeTab === 'steps' &&
+            (steps.length > 0 ? (
+              <StepTracker steps={steps} />
+            ) : (
+              <CookEmptyPanel
+                emoji="👩‍🍳"
+                title="No steps yet"
+                subtitle={
+                  isNewSession
+                    ? 'Steps will show up after Grace confirms what you are cooking.'
+                    : 'Cooking steps will appear here once your recipe is ready.'
+                }
+              />
+            ))}
+
+          {activeTab === 'notes' &&
+            (notes.length > 0 ? (
+              <NotesPanel notes={notes} />
+            ) : (
+              <CookEmptyPanel
+                emoji="📝"
+                title="No notes yet"
+                subtitle="Tips, substitutions, and fun facts from Grace will appear here."
+              />
+            ))}
+        </ScrollView>
+      )}
 
       <VoiceControlBar
         status={voice.status}
@@ -227,16 +238,31 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   graceTab: {
-    alignItems: 'center',
-    paddingTop: spacing.lg,
-    gap: spacing.md,
-    minHeight: 420,
+    flex: 1,
     width: '100%',
+    position: 'relative',
+    paddingBottom: 120,
+  },
+  orbBackground: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.22,
+  },
+  orbScale: {
+    transform: [{ scale: 1.35 }],
+  },
+  bannerWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    zIndex: 1,
   },
   connectError: {
     fontSize: fontSizes.sm,
     color: colors.error,
     textAlign: 'center',
     paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    zIndex: 1,
   },
 });

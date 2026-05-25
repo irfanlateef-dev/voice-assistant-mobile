@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { ChefHat, Plus } from 'lucide-react-native';
 import { openCookSession, openNewCookSession } from '@/lib/navigation';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Button } from '@/components/ui/Button';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { DeleteDishModal } from '@/components/cooking/DeleteDishModal';
@@ -73,7 +72,7 @@ export default function KitchenScreen() {
             <LoadingSkeleton
               key={i}
               width="100%"
-              height={118}
+              height={72}
               borderRadius={borderRadius.lg}
               style={styles.skeleton}
             />
@@ -108,6 +107,7 @@ export default function KitchenScreen() {
         <FlatList
           data={sessions}
           keyExtractor={(item) => item.id}
+          style={styles.listFlex}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl
@@ -131,15 +131,6 @@ export default function KitchenScreen() {
         style={styles.fab}
         onPress={() => openNewCookSession()}
       >
-        <Svg width={56} height={56} style={StyleSheet.absoluteFill}>
-          <Defs>
-            <LinearGradient id="fabGrad" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor={colors.primary} />
-              <Stop offset="1" stopColor={colors.accent} />
-            </LinearGradient>
-          </Defs>
-          <Rect width={56} height={56} rx={28} fill="url(#fabGrad)" />
-        </Svg>
         <Plus size={28} color={colors.surface} strokeWidth={2.5} />
       </Pressable>
 
@@ -224,13 +215,16 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
+  listFlex: {
+    flex: 1,
+  },
   list: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: 108,
   },
   skeleton: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   empty: {
     flex: 1,
@@ -266,6 +260,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.primary,

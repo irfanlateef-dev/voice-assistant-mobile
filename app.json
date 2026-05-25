@@ -4,9 +4,15 @@
     "slug": "homechef-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "scheme": "homechef",
     "userInterfaceStyle": "light",
     "backgroundColor": "#fafaf9",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#fafaf9"
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
@@ -21,6 +27,7 @@
     "android": {
       "package": "com.homechef.mobile",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#fafaf9"
       },
       "permissions": [

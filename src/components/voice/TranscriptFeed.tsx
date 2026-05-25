@@ -72,8 +72,14 @@ function TranscriptBubble({ entry }: { entry: TranscriptEntry }) {
 export function TranscriptFeed({ entries }: TranscriptFeedProps) {
   const scrollRef = useRef<ScrollView>(null);
 
+  const scrollToEnd = () => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+  };
+
   useEffect(() => {
-    scrollRef.current?.scrollToEnd({ animated: true });
+    scrollToEnd();
   }, [entries]);
 
   if (entries.length === 0) {
@@ -93,6 +99,8 @@ export function TranscriptFeed({ entries }: TranscriptFeedProps) {
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
+      onContentSizeChange={scrollToEnd}
+      keyboardShouldPersistTaps="handled"
     >
       {entries.map((entry) => (
         <TranscriptBubble key={entry.id} entry={entry} />
@@ -105,12 +113,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
-    maxHeight: 280,
   },
   content: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
     gap: spacing.sm,
+    flexGrow: 1,
   },
   row: {
     width: '100%',
@@ -129,11 +138,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   userBubble: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: 'rgba(254, 243, 199, 0.92)',
     borderColor: 'rgba(245, 158, 11, 0.25)',
   },
   assistantBubble: {
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderColor: colors.border,
   },
   label: {
@@ -160,19 +169,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   empty: {
+    flex: 1,
     width: '100%',
-    paddingVertical: spacing.xl,
+    paddingTop: spacing.lg,
     paddingHorizontal: spacing.lg,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.sm,
   },
   emptyEmoji: {
-    fontSize: 28,
+    fontSize: 24,
+    opacity: 0.7,
   },
   emptyText: {
     fontSize: fontSizes.sm,
     color: colors.textMuted,
-    textAlign: 'center',
     lineHeight: 20,
+    maxWidth: 280,
   },
 });

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -69,111 +70,107 @@ export default function LoginScreen() {
   }
 
   return (
-    <ScreenWrapper scroll edges={['top', 'bottom', 'left', 'right']}>
+    <ScreenWrapper edges={['top', 'bottom', 'left', 'right']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
       >
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
-            <RadialGradient id="loginGrad" cx="50%" cy="15%" r="60%">
-              <Stop offset="0" stopColor="#fde68a" stopOpacity="0.5" />
+            <RadialGradient id="loginGrad" cx="50%" cy="12%" r="55%">
+              <Stop offset="0" stopColor="#fde68a" stopOpacity="0.45" />
               <Stop offset="1" stopColor={colors.background} stopOpacity="0" />
             </RadialGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#loginGrad)" />
         </Svg>
 
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Svg width={56} height={56}>
-              <Defs>
-                <LinearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
-                  <Stop offset="0" stopColor={colors.primary} />
-                  <Stop offset="1" stopColor={colors.accent} />
-                </LinearGradient>
-              </Defs>
-              <Rect width={56} height={56} rx={borderRadius.md} fill="url(#logoGrad)" />
-            </Svg>
-            <Text style={styles.logoEmoji}>🍲</Text>
+        <View style={styles.topSection}>
+          <View style={styles.header}>
+            <Image
+              source={require('../../assets/icon.png')}
+              style={styles.logoImage}
+            />
+            <Text style={styles.appName}>HomeChef AI</Text>
           </View>
-          <Text style={styles.appName}>HomeChef AI</Text>
+
+          <Card style={styles.card}>
+            <Text style={styles.title}>Welcome back</Text>
+            <Text style={styles.subtitle}>Sign in to continue cooking with Grace</Text>
+
+            {errors.form && <Text style={styles.formError}>{errors.form}</Text>}
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={[styles.input, errors.email && styles.inputError]}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+              />
+              {errors.email && <Text style={styles.error}>{errors.email}</Text>}
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.passwordRow}>
+                <TextInput
+                  style={[styles.input, styles.passwordInput, errors.password && styles.inputError]}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Your password"
+                  placeholderTextColor={colors.textMuted}
+                  secureTextEntry={!showPassword}
+                  autoComplete="password"
+                />
+                <Pressable
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} color={colors.textMuted} />
+                  ) : (
+                    <Eye size={20} color={colors.textMuted} />
+                  )}
+                </Pressable>
+              </View>
+              {errors.password && <Text style={styles.error}>{errors.password}</Text>}
+            </View>
+
+            <Button
+              title="Sign In"
+              onPress={() => handleSubmit()}
+              loading={loading}
+              fullWidth
+              size="lg"
+              style={styles.submitButton}
+            />
+
+            <Link href="/(auth)/signup" asChild>
+              <Pressable style={styles.linkButton}>
+                <Text style={styles.linkText}>
+                  Don&apos;t have an account?{' '}
+                  <Text style={styles.linkHighlight}>Go to Sign Up</Text>
+                </Text>
+              </Pressable>
+            </Link>
+          </Card>
         </View>
 
-        <Card style={styles.card}>
-          <Text style={styles.title}>Welcome back</Text>
-          <Text style={styles.subtitle}>Sign in to continue cooking with Grace</Text>
-
-          {errors.form && <Text style={styles.formError}>{errors.form}</Text>}
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={[styles.input, errors.email && styles.inputError]}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-            />
-            {errors.email && <Text style={styles.error}>{errors.email}</Text>}
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.passwordRow}>
-              <TextInput
-                style={[styles.input, styles.passwordInput, errors.password && styles.inputError]}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Your password"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry={!showPassword}
-                autoComplete="password"
-              />
-              <Pressable
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-              >
-                {showPassword ? (
-                  <EyeOff size={20} color={colors.textMuted} />
-                ) : (
-                  <Eye size={20} color={colors.textMuted} />
-                )}
-              </Pressable>
-            </View>
-            {errors.password && <Text style={styles.error}>{errors.password}</Text>}
-          </View>
-
+        <View style={styles.bottomSection}>
           <Button
-            title="Sign In"
-            onPress={() => handleSubmit()}
+            title="Demo Login"
+            onPress={handleDemoLogin}
+            variant="secondary"
+            size="md"
             loading={loading}
             fullWidth
-            size="lg"
-            style={styles.submitButton}
           />
-
-          <Link href="/(auth)/signup" asChild>
-            <Pressable style={styles.linkButton}>
-              <Text style={styles.linkText}>
-                Don&apos;t have an account?{' '}
-                <Text style={styles.linkHighlight}>Go to Sign Up</Text>
-              </Text>
-            </Pressable>
-          </Link>
-        </Card>
-
-        <Button
-          title="Demo Login"
-          onPress={handleDemoLogin}
-          variant="secondary"
-          size="md"
-          loading={loading}
-          style={styles.demoButton}
-        />
+        </View>
       </KeyboardAvoidingView>
     </ScreenWrapper>
   );
@@ -182,23 +179,27 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    justifyContent: 'space-between',
+  },
+  topSection: {
+    flex: 1,
     justifyContent: 'center',
+    paddingTop: spacing.md,
+  },
+  bottomSection: {
+    paddingBottom: spacing.sm,
+    paddingTop: spacing.md,
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing.xxxl,
+    marginBottom: spacing.xl,
   },
-  logoContainer: {
-    width: 56,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.lg,
     marginBottom: spacing.md,
-  },
-  logoEmoji: {
-    position: 'absolute',
-    fontSize: 28,
   },
   appName: {
     fontSize: fontSizes.xxl,
@@ -206,7 +207,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   card: {
-    marginBottom: spacing.lg,
+    marginBottom: 0,
   },
   title: {
     fontSize: fontSizes.xl,
@@ -281,8 +282,5 @@ const styles = StyleSheet.create({
   linkHighlight: {
     color: colors.primary,
     fontWeight: fontWeights.semibold,
-  },
-  demoButton: {
-    alignSelf: 'center',
   },
 });
