@@ -49,7 +49,10 @@ export function SessionCard({
   const statusColor = STATUS_COLOR[session.status];
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 40).springify()}>
+    <Animated.View
+      entering={FadeInDown.delay(index * 40).springify()}
+      style={styles.wrapper}
+    >
       <View style={styles.card}>
         <View style={styles.iconSlot}>
           <View style={styles.iconContainer}>
@@ -57,40 +60,48 @@ export function SessionCard({
           </View>
         </View>
 
-        <Pressable
-          onPress={onPress}
-          style={({ pressed }) => [styles.content, pressed && styles.pressed]}
-        >
-          <Text style={styles.dishName} numberOfLines={1}>
-            {session.dishName}
-          </Text>
-          <Text style={styles.metaLine} numberOfLines={1}>
-            <Text style={[styles.statusText, { color: statusColor }]}>
-              {statusLabel}
+        <View style={styles.content}>
+          <Pressable
+            onPress={onPress}
+            style={({ pressed }) => [styles.contentPressable, pressed && styles.pressed]}
+          >
+            <Text style={styles.dishName} numberOfLines={1}>
+              {session.dishName}
             </Text>
-            <Text style={styles.stepsText}> · {stepLabel}</Text>
-          </Text>
-        </Pressable>
+            <Text style={styles.metaLine} numberOfLines={1}>
+              <Text style={[styles.statusText, { color: statusColor }]}>
+                {statusLabel}
+              </Text>
+              <Text style={styles.stepsText}> · {stepLabel}</Text>
+            </Text>
+          </Pressable>
+        </View>
 
-        <Pressable
-          onPress={onDelete}
-          style={({ pressed }) => [
-            styles.deleteSlot,
-            pressed && styles.deletePressed,
-          ]}
-          hitSlop={4}
-        >
-          <Trash2 size={20} color={colors.error} strokeWidth={2} />
-        </Pressable>
+        <View style={styles.deleteSlot}>
+          <Pressable
+            onPress={onDelete}
+            style={({ pressed }) => [
+              styles.deleteButton,
+              pressed && styles.deletePressed,
+            ]}
+            hitSlop={4}
+          >
+            <Trash2 size={20} color={colors.error} strokeWidth={2} />
+          </Pressable>
+        </View>
       </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    alignSelf: 'stretch',
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'stretch',
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
@@ -122,8 +133,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
     minWidth: 0,
+  },
+  contentPressable: {
+    flex: 1,
+    justifyContent: 'center',
     gap: 2,
   },
   pressed: {
@@ -148,10 +162,16 @@ const styles = StyleSheet.create({
   deleteSlot: {
     width: SIDE_SIZE,
     height: SIDE_SIZE,
+    flexShrink: 0,
+    marginLeft: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
-    marginLeft: 'auto',
+  },
+  deleteButton: {
+    width: SIDE_SIZE,
+    height: SIDE_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   deletePressed: {
     opacity: 0.65,

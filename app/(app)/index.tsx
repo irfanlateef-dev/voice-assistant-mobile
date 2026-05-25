@@ -222,6 +222,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: 108,
+    alignItems: 'stretch',
   },
   skeleton: {
     marginBottom: spacing.sm,
