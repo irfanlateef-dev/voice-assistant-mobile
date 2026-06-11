@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Link, router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { Button } from '@/components/ui/Button';
@@ -22,6 +23,7 @@ import { fontSizes, fontWeights } from '@/constants/typography';
 import { DEMO_CREDENTIALS } from '@/constants/config';
 
 export default function LoginScreen() {
+  const insets = useSafeAreaInsets();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -70,11 +72,8 @@ export default function LoginScreen() {
   }
 
   return (
-    <ScreenWrapper edges={['top', 'bottom', 'left', 'right']}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.flex}
-      >
+    <ScreenWrapper edges={['bottom', 'left', 'right']} style={styles.screen}>
+      <View style={styles.fullBleed}>
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
             <RadialGradient id="loginGrad" cx="50%" cy="12%" r="55%">
@@ -85,7 +84,11 @@ export default function LoginScreen() {
           <Rect width="100%" height="100%" fill="url(#loginGrad)" />
         </Svg>
 
-        <View style={styles.topSection}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={[styles.flex, { paddingTop: insets.top }]}
+        >
+          <View style={styles.topSection}>
           <View style={styles.header}>
             <Image
               source={require('../../assets/icon.png')}
@@ -171,12 +174,19 @@ export default function LoginScreen() {
             fullWidth
           />
         </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    backgroundColor: 'transparent',
+  },
+  fullBleed: {
+    flex: 1,
+  },
   flex: {
     flex: 1,
     paddingHorizontal: spacing.lg,
@@ -185,7 +195,6 @@ const styles = StyleSheet.create({
   topSection: {
     flex: 1,
     justifyContent: 'center',
-    paddingTop: spacing.md,
   },
   bottomSection: {
     paddingBottom: spacing.sm,

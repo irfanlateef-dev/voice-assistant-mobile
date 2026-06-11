@@ -5,22 +5,26 @@ import { isExpoGo } from '@/lib/livekitSetup';
 interface UseVoiceSessionFocusOptions {
   isAuthenticated: boolean;
   permissionGranted: boolean | null;
-  sessionId?: string;
+  isConnected: boolean;
+  isConnecting: boolean;
   connect: () => Promise<void>;
-  fullReset: () => Promise<void>;
 }
 
 export function useVoiceSessionFocus({
   isAuthenticated,
   permissionGranted,
-  sessionId,
+  isConnected,
+  isConnecting,
   connect,
-  fullReset,
 }: UseVoiceSessionFocusOptions): void {
   const connectRef = useRef(connect);
-  const fullResetRef = useRef(fullReset);
   connectRef.current = connect;
-  fullResetRef.current = fullReset;
+
+  const isConnectedRef = useRef(isConnected);
+  isConnectedRef.current = isConnected;
+
+  const isConnectingRef = useRef(isConnecting);
+  isConnectingRef.current = isConnecting;
 
   useFocusEffect(
     useCallback(() => {
@@ -28,19 +32,14 @@ export function useVoiceSessionFocus({
         permissionGranted === true &&
         !isExpoGo() &&
         isAuthenticated &&
-        (sessionId === undefined || Boolean(sessionId));
+        !isConnectedRef.current &&
+        !isConnectingRef.current;
 
-      if (!canConnect) {
-        return () => {
-          void fullResetRef.current();
-        };
+      if (canConnect) {
+        void connectRef.current();
       }
 
-      void connectRef.current();
-
-      return () => {
-        void fullResetRef.current();
-      };
-    }, [isAuthenticated, permissionGranted, sessionId]),
+      return undefined;
+    }, [isAuthenticated, permissionGranted]),
   );
 }

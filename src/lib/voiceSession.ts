@@ -6,6 +6,18 @@ import { Room, Track } from 'livekit-client';
 let activeRoom: Room | null = null;
 let activeOwnerId: string | null = null;
 
+export interface VoiceSessionBridge {
+  onExternalTeardown: () => Promise<void>;
+}
+
+let voiceSessionBridge: VoiceSessionBridge | null = null;
+
+export function registerVoiceSessionBridge(
+  bridge: VoiceSessionBridge | null,
+): void {
+  voiceSessionBridge = bridge;
+}
+
 function detachAllTracks(room: Room): void {
   room.localParticipant.trackPublications.forEach((publication) => {
     const track = publication.track;
@@ -35,8 +47,14 @@ export async function teardownVoiceRoom(room: Room | null): Promise<void> {
     return;
   }
 
+  if (activeRoom === room) {
+    activeRoom = null;
+    activeOwnerId = null;
+  }
+
   try {
     room.removeAllListeners();
+
     detachAllTracks(room);
 
     if (room.localParticipant.isMicrophoneEnabled) {
@@ -48,11 +66,6 @@ export async function teardownVoiceRoom(room: Room | null): Promise<void> {
     }
   } catch {
     // Best-effort teardown
-  }
-
-  if (activeRoom === room) {
-    activeRoom = null;
-    activeOwnerId = null;
   }
 
   try {
@@ -73,7 +86,13 @@ export async function teardownVoiceRoom(room: Room | null): Promise<void> {
   }
 }
 
+/** Tear down LiveKit and sync the active useVoiceAgent hook (if mounted). */
 export async function teardownActiveVoiceSession(): Promise<void> {
+  if (voiceSessionBridge) {
+    await voiceSessionBridge.onExternalTeardown();
+    return;
+  }
+
   const room = activeRoom;
   activeRoom = null;
   activeOwnerId = null;
@@ -85,8 +104,18 @@ export function registerActiveVoiceRoom(room: Room, ownerId: string): void {
   activeOwnerId = ownerId;
 }
 
-export async function ensureSingleVoiceRoom(ownerId: string): Promise<void> {
-  if (activeRoom && activeOwnerId !== ownerId) {
-    await teardownVoiceRoom(activeRoom);
+/** Always disconnect any existing room before opening a new one. */
+export async function ensureSingleVoiceRoom(): Promise<void> {
+  if (!activeRoom) {
+    return;
   }
+
+  const room = activeRoom;
+  activeRoom = null;
+  activeOwnerId = null;
+  await teardownVoiceRoom(room);
+}
+
+export function getActiveVoiceOwnerId(): string | null {
+  return activeOwnerId;
 }

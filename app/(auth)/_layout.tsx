@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { colors } from '@/constants/colors';
@@ -21,6 +22,7 @@ function AuthBackground() {
 export default function AuthLayout() {
   return (
     <View style={styles.container}>
+      <StatusBar style="dark" translucent />
       <AuthBackground />
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="login" />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   LayoutChangeEvent,
   Pressable,
@@ -89,6 +89,24 @@ export function CookSessionView({
 
   const ingredients: Ingredient[] = session?.ingredients ?? [];
   const steps: Step[] = session?.steps ?? [];
+  const prevIngredientCount = useRef(0);
+
+  useEffect(() => {
+    const hadNone = prevIngredientCount.current === 0;
+    const hasSome = ingredients.length > 0;
+
+    if (hadNone && hasSome && activeTab === 'grace') {
+      setActiveTab('ingredients');
+    }
+
+    prevIngredientCount.current = ingredients.length;
+  }, [ingredients.length, activeTab]);
+
+  useEffect(() => {
+    if (session?.status === 'confirmed' && activeTab === 'grace' && ingredients.length > 0) {
+      setActiveTab('ingredients');
+    }
+  }, [session?.status, ingredients.length, activeTab]);
 
   return (
     <ScreenWrapper edges={['top', 'left', 'right']}>
@@ -160,7 +178,7 @@ export function CookSessionView({
 
           {activeTab === 'steps' &&
             (steps.length > 0 ? (
-              <StepTracker steps={steps} />
+              <StepTracker steps={steps} currentStep={session?.currentStep ?? 1} />
             ) : (
               <CookEmptyPanel
                 emoji="👩‍🍳"

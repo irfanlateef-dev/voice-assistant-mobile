@@ -3,13 +3,13 @@ import { teardownActiveVoiceSession } from '@/lib/voiceSession';
 
 export function openNewCookSession(): void {
   void teardownActiveVoiceSession().then(() => {
-    router.navigate('/cook');
+    router.replace('/cook');
   });
 }
 
 export function openCookSession(sessionId: string): void {
   void teardownActiveVoiceSession().then(() => {
-    router.navigate({
+    router.replace({
       pathname: '/cook/[sessionId]',
       params: { sessionId },
     });

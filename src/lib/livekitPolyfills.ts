@@ -25,6 +25,30 @@ function installDOMExceptionPolyfill(): void {
 
 installDOMExceptionPolyfill();
 
+function installEventPolyfill(): void {
+  const globalObj = global as typeof global & { Event?: typeof Event };
+
+  if (typeof globalObj.Event !== 'undefined') {
+    return;
+  }
+
+  class PolyfillEvent {
+    type: string;
+    bubbles: boolean;
+    cancelable: boolean;
+
+    constructor(type: string, eventInitDict?: { bubbles?: boolean; cancelable?: boolean }) {
+      this.type = type;
+      this.bubbles = eventInitDict?.bubbles ?? false;
+      this.cancelable = eventInitDict?.cancelable ?? false;
+    }
+  }
+
+  globalObj.Event = PolyfillEvent as unknown as typeof Event;
+}
+
+installEventPolyfill();
+
 export function installLiveKitGlobals(): void {
   if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
     return;

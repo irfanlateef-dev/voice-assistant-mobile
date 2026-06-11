@@ -21,6 +21,7 @@ import {
 import {
   ensureSingleVoiceRoom,
   registerActiveVoiceRoom,
+  registerVoiceSessionBridge,
   teardownVoiceRoom,
 } from '@/lib/voiceSession';
 import { getToken } from '@/services/livekit.service';
@@ -28,10 +29,10 @@ import { getConfig } from '@/services/auth.service';
 import { getErrorMessage } from '@/services/api';
 import type {
   TranscriptEntry,
-  VoiceAction,
   VoiceActionHandler,
   VoiceStatus,
 } from '@/types/voice.types';
+import { parseVoiceAction } from '@/lib/parseVoiceAction';
 import { useHaptics } from '@/hooks/useHaptics';
 import { isExpoGo, EXPO_GO_VOICE_MESSAGE } from '@/lib/livekitSetup';
 
@@ -68,6 +69,7 @@ export function useVoiceAgent({
   const isConnectedRef = useRef(false);
   const isConnectingRef = useRef(false);
   const connectGenerationRef = useRef(0);
+  const connectPromiseRef = useRef<Promise<void> | null>(null);
 
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -86,14 +88,14 @@ export function useVoiceAgent({
   const { lightImpact, mediumImpact, notificationSuccess, notificationError } =
     useHaptics();
   const previousStatusRef = useRef<VoiceStatus>('idle');
+  const fullResetRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     onActionRef.current = onAction;
   }, [onAction]);
 
-  useEffect(() => {
-    ownerIdRef.current = generateOwnerId(sessionId);
-  }, [sessionId]);
+  const sessionIdRef = useRef(sessionId);
+  sessionIdRef.current = sessionId;
 
   useEffect(() => {
     isConnectedRef.current = isConnected;
@@ -225,16 +227,24 @@ export function useVoiceAgent({
       room.on(RoomEvent.DataReceived, (payload) => {
         try {
           const decoded = new TextDecoder().decode(payload);
-          const data = JSON.parse(decoded) as VoiceAction;
-          if (data.type === 'action') {
-            if (data.action === 'tool_called') {
-              setIsThinking(true);
-            }
-            if (data.action === 'session_completed') {
-              notificationSuccess();
-            }
-            onActionRef.current?.(data.action, data.payload);
+          const data = JSON.parse(decoded) as unknown;
+          const parsed = parseVoiceAction(data);
+
+          if (!parsed) {
+            return;
           }
+
+          if (parsed.action === 'tool_called') {
+            setIsThinking(true);
+          }
+          if (parsed.action === 'session_completed') {
+            notificationSuccess();
+          }
+          onActionRef.current?.(
+            parsed.action,
+            parsed.payload,
+            parsed.sessionId,
+          );
         } catch {
           // Ignore malformed payloads
         }
@@ -270,6 +280,11 @@ export function useVoiceAgent({
       });
 
       room.on(RoomEvent.Disconnected, () => {
+        if (roomRef.current === room) {
+          roomRef.current = null;
+        }
+        isConnectedRef.current = false;
+        isConnectingRef.current = false;
         setIsConnected(false);
         setIsConnecting(false);
         setIsAgentReady(false);
@@ -318,12 +333,30 @@ export function useVoiceAgent({
 
   const fullReset = useCallback(async () => {
     connectGenerationRef.current += 1;
+    connectPromiseRef.current = null;
     await disconnect();
     resetLocalState();
   }, [disconnect, resetLocalState]);
 
+  fullResetRef.current = fullReset;
+
+  useEffect(() => {
+    registerVoiceSessionBridge({
+      onExternalTeardown: async () => {
+        connectGenerationRef.current += 1;
+        connectPromiseRef.current = null;
+        await disconnect();
+        resetLocalState();
+      },
+    });
+
+    return () => {
+      registerVoiceSessionBridge(null);
+    };
+  }, [disconnect, resetLocalState]);
+
   const connect = useCallback(async () => {
-    if (!authReady || isConnectingRef.current || isConnectedRef.current) {
+    if (!authReady) {
       return;
     }
 
@@ -332,87 +365,122 @@ export function useVoiceAgent({
       return;
     }
 
-    const generation = connectGenerationRef.current + 1;
-    connectGenerationRef.current = generation;
+    if (connectPromiseRef.current) {
+      await connectPromiseRef.current;
+      return;
+    }
 
-    setConnectError(null);
-    isConnectingRef.current = true;
-    setIsConnecting(true);
-    setIsStalled(false);
+    if (isConnectingRef.current || isConnectedRef.current) {
+      return;
+    }
 
-    try {
-      await ensureSingleVoiceRoom(ownerIdRef.current);
-      await AudioSession.startAudioSession();
+    const runConnect = async () => {
+      connectGenerationRef.current += 1;
+      const generation = connectGenerationRef.current;
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        shouldDuckAndroid: true,
-      });
-
-      const roomId = generateRoomId();
-      const token = await getToken(roomId, sessionId);
-
-      if (generation !== connectGenerationRef.current) {
-        return;
-      }
-
-      const room = new Room({
-        adaptiveStream: true,
-        dynacast: true,
-      });
-
-      roomRef.current = room;
-      registerActiveVoiceRoom(room, ownerIdRef.current);
-      setupRoomListeners(room);
-
-      await room.connect(config.livekitUrl, token, {
-        autoSubscribe: true,
-      });
-
-      if (generation !== connectGenerationRef.current) {
-        await teardownVoiceRoom(room);
-        roomRef.current = null;
-        return;
-      }
-
-      await room.localParticipant.setMicrophoneEnabled(true);
-      isConnectedRef.current = true;
-      isConnectingRef.current = false;
-      setIsConnected(true);
-      setIsConnecting(false);
-      wasConnectedRef.current = true;
-      allowReconnectRef.current = true;
-
-      room.remoteParticipants.forEach((participant) => {
-        if (participant.identity !== room.localParticipant.identity) {
-          setIsAgentReady(true);
-        }
-      });
+      setConnectError(null);
+      isConnectingRef.current = true;
+      setIsConnecting(true);
+      setIsStalled(false);
 
       try {
-        const configResponse = await getConfig();
-        setGreeting(configResponse.agent.greeting);
-      } catch {
-        setGreeting('Hi! I\'m Grace, your AI cooking assistant.');
+        if (roomRef.current) {
+          const existingRoom = roomRef.current;
+          roomRef.current = null;
+          await teardownVoiceRoom(existingRoom);
+        }
+
+        await ensureSingleVoiceRoom();
+
+        if (generation !== connectGenerationRef.current) {
+          return;
+        }
+
+        ownerIdRef.current = generateOwnerId(sessionIdRef.current);
+        await AudioSession.startAudioSession();
+
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+        });
+
+        const roomId = generateRoomId();
+        const token = await getToken(roomId, sessionIdRef.current);
+
+        if (generation !== connectGenerationRef.current) {
+          return;
+        }
+
+        const room = new Room({
+          adaptiveStream: true,
+          dynacast: true,
+        });
+
+        roomRef.current = room;
+        registerActiveVoiceRoom(room, ownerIdRef.current);
+        setupRoomListeners(room);
+
+        await room.connect(config.livekitUrl, token, {
+          autoSubscribe: true,
+        });
+
+        if (generation !== connectGenerationRef.current) {
+          await teardownVoiceRoom(room);
+          if (roomRef.current === room) {
+            roomRef.current = null;
+          }
+          return;
+        }
+
+        await room.localParticipant.setMicrophoneEnabled(true);
+        isConnectedRef.current = true;
+        isConnectingRef.current = false;
+        setIsConnected(true);
+        setIsConnecting(false);
+        wasConnectedRef.current = true;
+        allowReconnectRef.current = true;
+
+        room.remoteParticipants.forEach((participant) => {
+          if (participant.identity !== room.localParticipant.identity) {
+            setIsAgentReady(true);
+          }
+        });
+
+        try {
+          const configResponse = await getConfig();
+          setGreeting(configResponse.agent.greeting);
+        } catch {
+          setGreeting('Hi! I\'m Grace, your AI cooking assistant.');
+        }
+      } catch (error) {
+        if (generation !== connectGenerationRef.current) {
+          return;
+        }
+        setConnectError(getErrorMessage(error));
+        isConnectingRef.current = false;
+        isConnectedRef.current = false;
+        setIsConnecting(false);
+        setIsConnected(false);
+        const failedRoom = roomRef.current;
+        roomRef.current = null;
+        if (failedRoom) {
+          await teardownVoiceRoom(failedRoom);
+        }
       }
-    } catch (error) {
-      if (generation !== connectGenerationRef.current) {
-        return;
-      }
-      setConnectError(getErrorMessage(error));
-      isConnectingRef.current = false;
-      isConnectedRef.current = false;
-      setIsConnecting(false);
-      setIsConnected(false);
-      const failedRoom = roomRef.current;
-      roomRef.current = null;
-      if (failedRoom) {
-        await teardownVoiceRoom(failedRoom);
+    };
+
+    const promise = runConnect();
+    connectPromiseRef.current = promise;
+    try {
+      await promise;
+    } finally {
+      if (connectPromiseRef.current === promise) {
+        connectPromiseRef.current = null;
       }
     }
-  }, [authReady, sessionId, setupRoomListeners]);
+  }, [authReady, setupRoomListeners]);
 
   const reconnect = useCallback(async () => {
     await fullReset();
@@ -479,9 +547,9 @@ export function useVoiceAgent({
       if (interruptedTimerRef.current) {
         clearTimeout(interruptedTimerRef.current);
       }
-      void fullReset();
+      void fullResetRef.current();
     };
-  }, [clearStallTimer, fullReset]);
+  }, [clearStallTimer]);
 
   return {
     connect,

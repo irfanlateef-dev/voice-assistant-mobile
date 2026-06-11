@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { Link, router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { Button } from '@/components/ui/Button';
@@ -22,6 +23,7 @@ import { borderRadius, spacing } from '@/constants/spacing';
 import { fontSizes, fontWeights } from '@/constants/typography';
 
 export default function SignupScreen() {
+  const insets = useSafeAreaInsets();
   const { signup } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -73,11 +75,8 @@ export default function SignupScreen() {
   }
 
   return (
-    <ScreenWrapper edges={['top', 'bottom', 'left', 'right']}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.flex}
-      >
+    <ScreenWrapper edges={['bottom', 'left', 'right']} style={styles.screen}>
+      <View style={styles.fullBleed}>
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
             <RadialGradient id="signupGrad" cx="50%" cy="8%" r="50%">
@@ -88,12 +87,19 @@ export default function SignupScreen() {
           <Rect width="100%" height="100%" fill="url(#signupGrad)" />
         </Svg>
 
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.flex}
         >
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingTop: insets.top },
+            ]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           <View style={styles.header}>
             <Image
               source={require('../../assets/icon.png')}
@@ -190,12 +196,19 @@ export default function SignupScreen() {
           </Link>
         </Card>
         </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    backgroundColor: 'transparent',
+  },
+  fullBleed: {
+    flex: 1,
+  },
   flex: {
     flex: 1,
   },
@@ -205,7 +218,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
     paddingBottom: spacing.lg,
     justifyContent: 'center',
   },

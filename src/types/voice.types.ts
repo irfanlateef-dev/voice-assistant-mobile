@@ -24,5 +24,9 @@ export interface VoiceAction {
 }
 
 export interface VoiceActionHandler {
-  (action: string, payload?: Record<string, unknown>): void;
+  (
+    action: string,
+    payload?: Record<string, unknown>,
+    actionSessionId?: string,
+  ): void;
 }

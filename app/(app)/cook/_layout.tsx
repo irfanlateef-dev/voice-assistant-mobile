@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { CookVoiceProvider } from '@/providers/CookVoiceProvider';
 import { teardownActiveVoiceSession } from '@/lib/voiceSession';
 
-export default function CookLayout() {
+function CookStack() {
   useFocusEffect(
     useCallback(() => {
       return () => {
@@ -22,5 +23,13 @@ export default function CookLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="[sessionId]" />
     </Stack>
+  );
+}
+
+export default function CookLayout() {
+  return (
+    <CookVoiceProvider>
+      <CookStack />
+    </CookVoiceProvider>
   );
 }

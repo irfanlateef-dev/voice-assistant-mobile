@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -11,61 +11,41 @@ import { Audio } from 'expo-av';
 import { CookSessionView } from '@/components/cooking/CookSessionView';
 import { Button } from '@/components/ui/Button';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import {
-  useCookingSession,
-  useSessionNotes,
-  useVoiceActionInvalidation,
-  getErrorMessage,
-} from '@/hooks/useCookingSession';
-import { useVoiceAgent } from '@/hooks/useVoiceAgent';
+import { getErrorMessage, useCookingSession } from '@/hooks/useCookingSession';
 import { useVoiceSessionFocus } from '@/hooks/useVoiceSessionFocus';
 import { useAppState } from '@/hooks/useAppState';
 import { useAuth } from '@/hooks/useAuth';
+import { useCookVoice } from '@/providers/CookVoiceProvider';
+import { normalizeRouteParam } from '@/lib/navigation';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { fontSizes, fontWeights } from '@/constants/typography';
-import { normalizeRouteParam } from '@/lib/navigation';
 
 export default function ActiveSessionScreen() {
   const params = useLocalSearchParams<{ sessionId: string | string[] }>();
   const sessionId = normalizeRouteParam(params.sessionId);
   const { isAuthenticated } = useAuth();
+  const { session, notes, voice, fullReset } = useCookVoice();
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
 
   const {
-    data: session,
     isLoading,
     isError,
     error,
     refetch,
   } = useCookingSession(sessionId);
-  const { data: notes } = useSessionNotes(sessionId);
-  const invalidateAction = useVoiceActionInvalidation(sessionId);
-
-  const handleAction = useCallback(
-    (action: string) => {
-      invalidateAction(action);
-    },
-    [invalidateAction],
-  );
-
-  const voice = useVoiceAgent({
-    sessionId,
-    authReady: isAuthenticated,
-    onAction: handleAction,
-  });
 
   useVoiceSessionFocus({
     isAuthenticated,
     permissionGranted,
-    sessionId,
+    isConnected: voice.isConnected,
+    isConnecting: voice.status === 'connecting',
     connect: voice.connect,
-    fullReset: voice.fullReset,
   });
 
   useAppState({
     onBackground: () => {
-      void voice.fullReset();
+      void fullReset();
     },
   });
 
@@ -118,7 +98,7 @@ export default function ActiveSessionScreen() {
     );
   }
 
-  if (isLoading || permissionGranted === null) {
+  if ((isLoading && !session) || permissionGranted === null) {
     return (
       <ScreenWrapper edges={['top', 'left', 'right']}>
         <View style={styles.loadingContainer}>
@@ -129,7 +109,7 @@ export default function ActiveSessionScreen() {
     );
   }
 
-  if (isError || !session) {
+  if (isError && !session) {
     return (
       <ScreenWrapper edges={['top', 'bottom', 'left', 'right']}>
         <View style={styles.errorContainer}>
@@ -144,7 +124,7 @@ export default function ActiveSessionScreen() {
   return (
     <CookSessionView
       session={session}
-      notes={notes ?? []}
+      notes={notes}
       voice={voice}
     />
   );

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -6,61 +6,34 @@ import {
   Text,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
 import { Audio } from 'expo-av';
 import { CookSessionView } from '@/components/cooking/CookSessionView';
 import { Button } from '@/components/ui/Button';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import { useVoiceAgent } from '@/hooks/useVoiceAgent';
 import { useVoiceSessionFocus } from '@/hooks/useVoiceSessionFocus';
-import { useVoiceActionInvalidation } from '@/hooks/useCookingSession';
 import { useAppState } from '@/hooks/useAppState';
 import { useAuth } from '@/hooks/useAuth';
+import { useCookVoice } from '@/providers/CookVoiceProvider';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { fontSizes, fontWeights } from '@/constants/typography';
-import { teardownActiveVoiceSession } from '@/lib/voiceSession';
 
 export default function NewDishScreen() {
   const { isAuthenticated } = useAuth();
+  const { session, notes, voice, isNewSession, fullReset } = useCookVoice();
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
-  const invalidateAction = useVoiceActionInvalidation();
-
-  const handleAction = useCallback(
-    (action: string, payload?: Record<string, unknown>) => {
-      invalidateAction(action);
-      if (action === 'session_created') {
-        const sessionId =
-          (payload?.sessionId as string | undefined) ??
-          (payload?.id as string | undefined);
-        if (sessionId) {
-          void teardownActiveVoiceSession().then(() => {
-            router.replace({
-              pathname: '/cook/[sessionId]',
-              params: { sessionId },
-            });
-          });
-        }
-      }
-    },
-    [invalidateAction],
-  );
-
-  const voice = useVoiceAgent({
-    authReady: isAuthenticated,
-    onAction: handleAction,
-  });
 
   useVoiceSessionFocus({
     isAuthenticated,
     permissionGranted,
+    isConnected: voice.isConnected,
+    isConnecting: voice.status === 'connecting',
     connect: voice.connect,
-    fullReset: voice.fullReset,
   });
 
   useAppState({
     onBackground: () => {
-      void voice.fullReset();
+      void fullReset();
     },
   });
 
@@ -117,10 +90,10 @@ export default function NewDishScreen() {
 
   return (
     <CookSessionView
-      session={null}
-      notes={[]}
+      session={session}
+      notes={notes}
       voice={voice}
-      isNewSession
+      isNewSession={isNewSession}
     />
   );
 }
